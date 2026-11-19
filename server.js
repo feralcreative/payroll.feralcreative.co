@@ -472,9 +472,10 @@ app.post("/api/preview", async (req, res) => {
         uniqueProjects.add(entry.project.code || entry.project.name);
 
         // Match by project code if available, otherwise fall back to name
-        const projectExists = entry.project.code
-          ? contractorProjects.some((p) => p.code === entry.project.code)
-          : contractorProjects.some((p) => p.name === entry.project.name);
+        const matchedProject = entry.project.code
+          ? contractorProjects.find((p) => p.code === entry.project.code)
+          : contractorProjects.find((p) => p.name === entry.project.name);
+        const projectExists = Boolean(matchedProject);
 
         const taskExists = contractorTasks.some((t) => t.name === entry.task.name);
 
@@ -504,7 +505,7 @@ app.post("/api/preview", async (req, res) => {
           task: entry.task.name,
           hours: entry.hours,
           notes: entry.notes || "",
-          projectStatus: projectExists ? "exists" : "new",
+          projectStatus: !matchedProject ? "new" : matchedProject.is_active === false ? "archived" : "exists",
           taskStatus: taskExists ? "exists" : "new",
           entryStatus: isDuplicate ? "duplicate" : "pending",
         });
@@ -641,9 +642,19 @@ app.post("/api/sync", async (req, res) => {
           ? contractorProjects.find((p) => p.code === projectCode)
           : contractorProjects.find((p) => p.name === projectName);
 
+        const projectArchivedBefore = Boolean(contractorProject && contractorProject.is_active === false);
+
         if (!contractorProject) {
           contractorProject = await createProject(config.contractor, projectName, projectCode, defaultClient.id);
           contractorProjects.push(contractorProject);
+        } else if (contractorProject.is_active === false) {
+          // Harvest refuses time on an archived project (422 "Project isn't active"),
+          // and the agency is still billing it, so bring it back.
+          console.log(`  Reactivating archived contractor project ${projectCode || projectName}`);
+          const reactivated = await harvestRequest(config.contractor, `/projects/${contractorProject.id}`, "PATCH", {
+            is_active: true,
+          });
+          Object.assign(contractorProject, reactivated);
         }
 
         // Ensure task exists
@@ -711,7 +722,7 @@ app.post("/api/sync", async (req, res) => {
           task: taskName,
           hours: entry.hours,
           notes: entry.notes || "",
-          projectStatus: projectExistsBefore ? "exists" : "new",
+          projectStatus: !projectExistsBefore ? "new" : projectArchivedBefore ? "archived" : "exists",
           taskStatus: taskExistsBefore ? "exists" : "new",
           entryStatus,
         });

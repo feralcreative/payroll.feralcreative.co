@@ -507,6 +507,8 @@ function displayResults(data, type) {
                         ${
                           item.projectStatus === "new"
                             ? '<span class="status-badge new-project">New Project</span>'
+                            : item.projectStatus === "archived"
+                            ? `<span class="status-badge new-project">${type === "preview" ? "Archived, will reactivate" : "Reactivated"}</span>`
                             : '<span class="status-badge exists">Exists</span>'
                         }
                       </td>
