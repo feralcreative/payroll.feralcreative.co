@@ -1,16 +1,110 @@
 // Harvest Sync Web Server
 require("dotenv").config();
 const express = require("express");
-const cors = require("cors");
 const path = require("path");
 const fetch = require("node-fetch");
 const { exec } = require("child_process");
+const { verifyAccess } = require("./lib/access");
 
 const app = express();
 const PORT = 8118;
+app.disable("x-powered-by");
+app.set("etag", false);
 
-// Middleware
-app.use(cors());
+// Production sits behind Cloudflare Access. With REQUIRE_ACCESS_HEADER=1 every
+// request must carry an Access token signed for this application (ACCESS_AUD), and
+// the email in it must be on ALLOWED_EMAILS, so widening the Access policy alone
+// does not widen who can sync. Off for local dev, where no Access sits in front.
+const REQUIRE_ACCESS_HEADER = process.env.REQUIRE_ACCESS_HEADER === "1";
+const ACCESS_AUD = process.env.ACCESS_AUD;
+const ALLOWED_EMAILS = new Set(
+  (process.env.ALLOWED_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+);
+
+if (REQUIRE_ACCESS_HEADER && (!ACCESS_AUD || ALLOWED_EMAILS.size === 0)) {
+  console.error("[config] REQUIRE_ACCESS_HEADER=1 needs ACCESS_AUD and ALLOWED_EMAILS.");
+  process.exit(1);
+}
+
+const REQUIRED_ENV = [
+  "AGENCY_HARVEST_TOKEN",
+  "AGENCY_HARVEST_ACCOUNT_ID",
+  "CONTRACTOR_HARVEST_TOKEN",
+  "CONTRACTOR_HARVEST_ACCOUNT_ID",
+  "EMPLOYEE_1_NAME",
+];
+const missingEnv = REQUIRED_ENV.filter((name) => !process.env[name]);
+if (missingEnv.length > 0) {
+  console.error(`[config] Missing required settings: ${missingEnv.join(", ")}`);
+  process.exit(1);
+}
+
+// Container healthcheck. Ahead of the gate; through the tunnel it is still behind Access.
+app.get("/healthz", (req, res) => res.type("text/plain").send("ok"));
+
+app.use((req, res, next) => {
+  res.set({
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "same-origin",
+    "Content-Security-Policy": [
+      "default-src 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+      "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+      "img-src 'self' data:",
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+      "base-uri 'none'",
+      "form-action 'self'",
+    ].join("; "),
+  });
+  next();
+});
+
+app.use(async (req, res, next) => {
+  if (!REQUIRE_ACCESS_HEADER) return next();
+  let email;
+  try {
+    email = await verifyAccess(req.get("Cf-Access-Jwt-Assertion"), ACCESS_AUD);
+  } catch (err) {
+    console.error("[access] Could not fetch the Access signing keys", err);
+    return res.status(503).type("text/plain").send("Cannot verify Cloudflare Access right now.");
+  }
+  if (!email || !ALLOWED_EMAILS.has(email.toLowerCase())) {
+    console.warn(`[access] Blocked ${req.method} ${req.path} (${email || "no valid token"})`);
+    return res.status(403).type("text/plain").send("Forbidden.");
+  }
+  req.identity = email;
+  next();
+});
+
+// Writes only from this page: browsers mark cross-site requests, and a foreign
+// Origin is refused even where Sec-Fetch-Site is absent.
+app.use((req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD") return next();
+  const site = req.get("Sec-Fetch-Site");
+  const origin = req.get("Origin");
+  let sameOrigin = site ? site === "same-origin" : true;
+  if (origin) {
+    try {
+      sameOrigin = sameOrigin && new URL(origin).host === req.get("Host");
+    } catch {
+      sameOrigin = false;
+    }
+  }
+  if (!sameOrigin) return res.status(403).json({ error: "Cross-origin request refused" });
+  next();
+});
+
+app.use("/api", (req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
 app.use(express.json());
 
 // Configuration from environment variables
@@ -234,6 +328,32 @@ async function createTimeEntry(account, timeEntry, userId, projectId, taskId) {
   return data;
 }
 
+// Validates a preview or sync body before any Harvest call. Dates must be real
+// YYYY-MM-DD days in order; userIds, when given, must be agency user IDs.
+function parseSyncRequest(body) {
+  const { fromDate, toDate, userIds } = body || {};
+  const isDay = (s) =>
+    typeof s === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(s) &&
+    new Date(`${s}T00:00:00Z`).toISOString().startsWith(s);
+  if (!isDay(fromDate) || !isDay(toDate)) return { error: "fromDate and toDate must be YYYY-MM-DD dates" };
+  if (fromDate > toDate) return { error: "fromDate must not be after toDate" };
+  if (userIds !== undefined && !(Array.isArray(userIds) && userIds.every(Number.isInteger))) {
+    return { error: "userIds must be a list of user IDs" };
+  }
+  return { fromDate, toDate, userIds: userIds || [] };
+}
+
+// Only the configured employees are ever synced, whatever IDs the browser sends.
+function selectTargetUsers(agencyUsers, userIds) {
+  const configured = agencyUsers.filter((user) => config.targetUsers.includes(`${user.first_name} ${user.last_name}`));
+  return userIds.length > 0 ? configured.filter((user) => userIds.includes(user.id)) : configured;
+}
+
+// One sync at a time: duplicate detection is a snapshot taken before writing, so
+// two overlapping syncs could both create the same entry.
+let syncInProgress = false;
+
 // API Routes
 
 // Check connection status
@@ -276,26 +396,18 @@ app.get("/api/status", async (req, res) => {
 // Preview sync
 app.post("/api/preview", async (req, res) => {
   try {
-    const { fromDate, toDate, userIds } = req.body;
-
-    if (!fromDate || !toDate) {
-      return res.status(400).json({ error: "fromDate and toDate are required" });
+    const parsed = parseSyncRequest(req.body);
+    if (parsed.error) {
+      return res.status(400).json({ error: parsed.error });
     }
+    const { fromDate, toDate, userIds } = parsed;
 
     const agencyUsers = await getUsers(config.agency);
     const contractorUsers = await getUsers(config.contractor);
     const contractorProjects = await getProjects(config.contractor);
     const contractorTasks = await getTasks(config.contractor);
 
-    // Filter by selected users if provided, otherwise use all target users
-    let targetAgencyUsers;
-    if (userIds && userIds.length > 0) {
-      targetAgencyUsers = agencyUsers.filter((user) => userIds.includes(user.id));
-    } else {
-      targetAgencyUsers = agencyUsers.filter((user) =>
-        config.targetUsers.includes(`${user.first_name} ${user.last_name}`)
-      );
-    }
+    const targetAgencyUsers = selectTargetUsers(agencyUsers, userIds);
 
     if (targetAgencyUsers.length === 0) {
       return res.status(400).json({ error: "No target users found in agency account" });
@@ -421,32 +533,30 @@ app.post("/api/preview", async (req, res) => {
 
 // Run sync
 app.post("/api/sync", async (req, res) => {
+  const parsed = parseSyncRequest(req.body);
+  if (parsed.error) {
+    return res.status(400).json({ error: parsed.error });
+  }
+  if (syncInProgress) {
+    return res.status(409).json({ error: "A sync is already running. Wait for it to finish, then re-run if needed." });
+  }
+  syncInProgress = true;
+  console.log(`[sync] ${req.identity || "local"} started ${parsed.fromDate} to ${parsed.toDate}`);
   try {
-    const { fromDate, toDate, userIds } = req.body;
-
-    if (!fromDate || !toDate) {
-      return res.status(400).json({ error: "fromDate and toDate are required" });
-    }
+    const { fromDate, toDate, userIds } = parsed;
 
     const agencyUsers = await getUsers(config.agency);
     const contractorUsers = await getUsers(config.contractor);
     const contractorProjects = await getProjects(config.contractor);
     const contractorTasks = await getTasks(config.contractor);
-    const defaultClient = await getOrCreateDefaultClient(config.contractor);
 
-    // Filter by selected users if provided, otherwise use all target users
-    let targetAgencyUsers;
-    if (userIds && userIds.length > 0) {
-      targetAgencyUsers = agencyUsers.filter((user) => userIds.includes(user.id));
-    } else {
-      targetAgencyUsers = agencyUsers.filter((user) =>
-        config.targetUsers.includes(`${user.first_name} ${user.last_name}`)
-      );
-    }
+    const targetAgencyUsers = selectTargetUsers(agencyUsers, userIds);
 
     if (targetAgencyUsers.length === 0) {
       return res.status(400).json({ error: "No target users found in agency account" });
     }
+
+    const defaultClient = await getOrCreateDefaultClient(config.contractor);
 
     let totalEntries = 0;
     let totalHours = 0;
@@ -613,6 +723,8 @@ app.post("/api/sync", async (req, res) => {
   } catch (error) {
     console.error("Sync error:", error);
     res.status(500).json({ error: error.message });
+  } finally {
+    syncInProgress = false;
   }
 });
 
@@ -701,7 +813,10 @@ app.get("/api/sync/users", async (req, res) => {
 // Get available users for an account
 app.get("/api/users/:account", async (req, res) => {
   try {
-    const account = req.params.account === "agency" ? config.agency : config.contractor;
+    if (req.params.account !== "agency" && req.params.account !== "contractor") {
+      return res.status(400).json({ error: "account must be agency or contractor" });
+    }
+    const account = config[req.params.account];
     const users = await getUsers(account);
 
     res.json({
@@ -961,13 +1076,20 @@ app.get("/api/users/:account", async (req, res) => {
 // END TIMER ENDPOINTS DISABLED
 
 // Serve static files (after API routes)
-app.use(express.static("public"));
+// Asset names are unversioned, so nothing private is cached and every load refetches.
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    etag: false,
+    setHeaders: (res) => res.set("Cache-Control", "private, no-cache"),
+  })
+);
 
 // Catch-all route to serve index.html for client-side routing
 // Use a middleware function instead of app.get("*") for Express 5.x compatibility
 app.use((req, res, next) => {
   // Only handle GET requests for non-API, non-static file routes
   if (req.method === "GET" && !req.path.startsWith("/api/")) {
+    res.set("Cache-Control", "no-store");
     res.sendFile(path.join(__dirname, "public", "index.html"));
   } else {
     next();
