@@ -95,17 +95,19 @@ info "Building image..."
 docker build --platform linux/amd64 -t "$IMAGE_NAME" .
 
 info "Sending image to the NAS..."
-"${SSH[@]}" "mkdir -p ${NAS_DEPLOY_PATH}"
+"${SSH[@]}" "mkdir -p ${NAS_DEPLOY_PATH} && chmod 700 ${NAS_DEPLOY_PATH}"
 docker save "$IMAGE_NAME" | gzip | "${SSH[@]}" "gunzip | ${DOCKER} load"
 
 info "Sending docker-compose.yml..."
 "${SSH[@]}" "cat > ${NAS_DEPLOY_PATH}/docker-compose.yml" < docker-compose.yml
 
+# /volume1/web carries an inherited ACL that makes new files world-readable
+# whatever the umask; an explicit chmod drops it.
 info "Writing runtime .env (mode 600)..."
 {
   for k in "${RUNTIME_KEYS[@]}"; do printf '%s=%s\n' "$k" "${!k:-}"; done
   printf 'REQUIRE_ACCESS_HEADER=1\nACCESS_AUD=%s\nALLOWED_EMAILS=%s\n' "$ACCESS_AUD" "$ALLOWED_EMAILS"
-} | "${SSH[@]}" "umask 077 && cat > ${NAS_DEPLOY_PATH}/.env.tmp && mv ${NAS_DEPLOY_PATH}/.env.tmp ${NAS_DEPLOY_PATH}/.env"
+} | "${SSH[@]}" "umask 077 && cat > ${NAS_DEPLOY_PATH}/.env.tmp && chmod 600 ${NAS_DEPLOY_PATH}/.env.tmp && mv ${NAS_DEPLOY_PATH}/.env.tmp ${NAS_DEPLOY_PATH}/.env"
 
 info "Restarting container..."
 "${SSH[@]}" "cd ${NAS_DEPLOY_PATH} && ${COMPOSE} down && ${COMPOSE} up -d"
