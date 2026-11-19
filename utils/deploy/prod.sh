@@ -21,7 +21,7 @@ DOCKER="/usr/local/bin/docker"
 COMPOSE="/usr/local/bin/docker-compose"
 
 # The Access application's AUD tag (not a secret; provision-access.sh prints it).
-ACCESS_AUD=""
+ACCESS_AUD="7489476c3ba83f5b196a524fc47a3994afcb3d265d533ec703a7ee994680476f"
 # Must match the allow policy in provision-access.sh.
 ALLOWED_EMAILS="ziad@feralcreative.co,rebecca@feralcreative.co"
 
