@@ -276,6 +276,19 @@ async function ensureTaskExists(account, taskName, existingTasks) {
   return data;
 }
 
+// A 422 on assignment usually means "already assigned", but the existing
+// assignment may be archived, which Harvest also rejects time against. Find it
+// and make sure it is active; anything else is left to createTimeEntry to report.
+async function reactivateAssignment(account, projectId, kind, matches) {
+  const data = await harvestRequest(account, `/projects/${projectId}/${kind}?per_page=100`);
+  const existing = data[kind].find(matches);
+  if (existing && existing.is_active === false) {
+    console.log(`  Reactivating archived ${kind.replace("_", " ").slice(0, -1)} on project ${projectId}`);
+    return harvestRequest(account, `/projects/${projectId}/${kind}/${existing.id}`, "PATCH", { is_active: true });
+  }
+  return null;
+}
+
 // Assign task to project
 async function assignTaskToProject(account, projectId, taskId) {
   const assignmentData = {
@@ -289,7 +302,7 @@ async function assignTaskToProject(account, projectId, taskId) {
     return data;
   } catch (error) {
     if (error.message.includes("422")) {
-      return null; // Task already assigned
+      return reactivateAssignment(account, projectId, "task_assignments", (a) => a.task.id === taskId);
     }
     throw error;
   }
@@ -307,7 +320,7 @@ async function assignUserToProject(account, projectId, userId) {
     return data;
   } catch (error) {
     if (error.message.includes("422")) {
-      return null; // User already assigned
+      return reactivateAssignment(account, projectId, "user_assignments", (a) => a.user.id === userId);
     }
     throw error;
   }
