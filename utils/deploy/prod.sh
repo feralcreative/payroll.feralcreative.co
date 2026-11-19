@@ -57,9 +57,9 @@ for c in docker ssh git curl; do command -v "$c" >/dev/null || die "$c is requir
 # Parsed, not sourced: values like "Feral Creative" are unquoted, as dotenv allows.
 while IFS= read -r line || [[ -n "$line" ]]; do
   [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]] || continue
-  val="${BASH_REMATCH[2]}"
-  [[ "$val" =~ ^\"(.*)\"$ || "$val" =~ ^\'(.*)\'$ ]] && val="${BASH_REMATCH[1]}"
-  printf -v "${BASH_REMATCH[1]}" '%s' "$val"
+  key="${BASH_REMATCH[1]}"; val="${BASH_REMATCH[2]}"
+  if [[ "$val" =~ ^\"(.*)\"$ || "$val" =~ ^\'(.*)\'$ ]]; then val="${BASH_REMATCH[1]}"; fi
+  printf -v "$key" '%s' "$val"
 done < .env
 for k in AGENCY_HARVEST_TOKEN AGENCY_HARVEST_ACCOUNT_ID CONTRACTOR_HARVEST_TOKEN CONTRACTOR_HARVEST_ACCOUNT_ID EMPLOYEE_1_NAME; do
   [[ -n "${!k:-}" ]] || die "$k is not set in .env."
