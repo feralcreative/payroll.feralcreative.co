@@ -351,6 +351,14 @@ function selectTargetUsers(agencyUsers, userIds) {
   return userIds.length > 0 ? configured.filter((user) => userIds.includes(user.id)) : configured;
 }
 
+// Harvest lists entries newest first, so a negative timer correction can come
+// before the positive entry it corrects. Harvest refuses any write that takes a
+// project and task negative for a day (422), so write oldest day first and, within
+// a day, largest hours first: positives always land before negatives.
+function byDayThenHoursDesc(a, b) {
+  return a.spent_date.localeCompare(b.spent_date) || b.hours - a.hours;
+}
+
 // One sync at a time: duplicate detection is a snapshot taken before writing, so
 // two overlapping syncs could both create the same entry.
 let syncInProgress = false;
@@ -447,7 +455,7 @@ app.post("/api/preview", async (req, res) => {
       const timeEntries = await getTimeEntries(config.agency, user.id, fromDate, toDate);
 
       // Filter out entries with 0 hours (running timers); keep negative corrections
-      const filteredEntries = timeEntries.filter((entry) => entry.hours !== 0);
+      const filteredEntries = timeEntries.filter((entry) => entry.hours !== 0).sort(byDayThenHoursDesc);
       totalEntries += filteredEntries.length;
 
       const userName = `${user.first_name} ${user.last_name}`;
@@ -604,7 +612,7 @@ app.post("/api/sync", async (req, res) => {
       const timeEntries = await getTimeEntries(config.agency, agencyUser.id, fromDate, toDate);
 
       // Filter out entries with 0 hours (running timers); keep negative corrections
-      const filteredEntries = timeEntries.filter((entry) => entry.hours !== 0);
+      const filteredEntries = timeEntries.filter((entry) => entry.hours !== 0).sort(byDayThenHoursDesc);
       totalEntries += filteredEntries.length;
 
       const userName = `${agencyUser.first_name} ${agencyUser.last_name}`;

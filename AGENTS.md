@@ -111,7 +111,7 @@ Deeper: [docs/architecture.md](docs/architecture.md).
 - **The CSP is `script-src 'self'`.** Inline scripts and inline `on*=` handlers do not run; wire events in `dashboard.js`. Escape any Harvest-sourced string with `escapeHtml` before it goes into an `innerHTML` template.
 - **Port 8118 has no env override.** If the port is busy, the process holding it is this app. Kill it and restart on 8118; never fall back to another port.
 - **The preview CLI drops `sync-preview-<ISO>.html` in the repo root.** Gitignored, but clean it up.
-- **Zero-hour entries are filtered out** before sync and preview, which is how running timers are excluded. Negative entries are kept: Harvest writes them when a forgotten timer is corrected, and dropping them overstates the contractor invoice. Keep the filter at `entry.hours !== 0`, never `> 0`.
+- **Zero-hour entries are filtered out** before sync and preview, which is how running timers are excluded. Negative entries are kept: Harvest writes them when a forgotten timer is corrected, and dropping them overstates the contractor invoice. Keep the filter at `entry.hours !== 0`, never `> 0`. Entries are then sorted by `byDayThenHoursDesc` (oldest day first, largest hours first) because Harvest lists newest first and refuses with a 422 any write that takes a project and task negative for a day; do not drop the sort.
 - **`getOrCreateDefaultClient` falls back to the first client in the account** when it finds no client named `Default Client` or matching `AGENCY_NAME`. Every auto-created project inherits that choice.
 - **`assets/styles/dashboard-temp.css` is referenced by nothing.** Do not edit it expecting an effect.
 
