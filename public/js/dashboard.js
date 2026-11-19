@@ -215,6 +215,11 @@ function applyBrandColors(agencyColor, contractorColor) {
   document.documentElement.style.setProperty("--contractor-brand-color", contractorColor);
 }
 
+// Escape text from Harvest or the server before it goes into an HTML template.
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
 // Update connection status UI
 function updateConnectionStatus(type, status) {
   const statusIcon = document.getElementById(`${type}Status`);
@@ -403,7 +408,7 @@ function displayResults(data, type) {
       <div class="summary-grid">
         <div class="summary-item">
           <div class="summary-label">Total Entries</div>
-          <div class="summary-value">${summary.totalEntries || 0}</div>
+          <div class="summary-value">${escapeHtml(summary.totalEntries || 0)}</div>
         </div>
         <div class="summary-item">
           <div class="summary-label">Total Hours</div>
@@ -411,28 +416,28 @@ function displayResults(data, type) {
         </div>
         <div class="summary-item">
           <div class="summary-label">Projects</div>
-          <div class="summary-value">${summary.totalProjects || 0}</div>
+          <div class="summary-value">${escapeHtml(summary.totalProjects || 0)}</div>
         </div>
         ${
           type === "sync"
             ? `
         <div class="summary-item">
           <div class="summary-label">Created</div>
-          <div class="summary-value">${summary.entriesCreated || 0}</div>
+          <div class="summary-value">${escapeHtml(summary.entriesCreated || 0)}</div>
         </div>
         <div class="summary-item">
           <div class="summary-label">Skipped</div>
-          <div class="summary-value">${summary.entriesSkipped || 0}</div>
+          <div class="summary-value">${escapeHtml(summary.entriesSkipped || 0)}</div>
         </div>
         `
             : `
         <div class="summary-item">
           <div class="summary-label">New Projects</div>
-          <div class="summary-value">${summary.newProjects || 0}</div>
+          <div class="summary-value">${escapeHtml(summary.newProjects || 0)}</div>
         </div>
         <div class="summary-item">
           <div class="summary-label">New Tasks</div>
-          <div class="summary-value">${summary.newTasks || 0}</div>
+          <div class="summary-value">${escapeHtml(summary.newTasks || 0)}</div>
         </div>
         `
         }
@@ -450,7 +455,7 @@ function displayResults(data, type) {
             .map(
               ([user, hours]) => `
             <div class="user-hours-card">
-              <div class="user-name">${user}</div>
+              <div class="user-name">${escapeHtml(user)}</div>
               <div class="user-hours">${formatHoursWithDecimal(hours)}</div>
             </div>
           `
@@ -489,14 +494,14 @@ function displayResults(data, type) {
                 ? lineItems
                     .map(
                       (item) => `
-                    <tr class="line-item-row ${item.entryStatus}">
-                      <td>${item.date}</td>
-                      <td>${item.user}</td>
+                    <tr class="line-item-row ${escapeHtml(item.entryStatus)}">
+                      <td>${escapeHtml(item.date)}</td>
+                      <td>${escapeHtml(item.user)}</td>
                       <td>
-                        ${item.project}
+                        ${escapeHtml(item.project)}
                         ${
                           item.projectCode
-                            ? `<br><small style="color: var(--harvest-gray-600);">Code: ${item.projectCode}</small>`
+                            ? `<br><small style="color: var(--harvest-gray-600);">Code: ${escapeHtml(item.projectCode)}</small>`
                             : ""
                         }
                         ${
@@ -506,11 +511,11 @@ function displayResults(data, type) {
                         }
                       </td>
                       <td>
-                        ${item.task}
+                        ${escapeHtml(item.task)}
                         ${item.taskStatus === "new" ? '<span class="status-badge new-task">New Task</span>' : ""}
                       </td>
                       <td>${formatHoursWithDecimal(item.hours)}</td>
-                      <td class="notes-cell">${item.notes || "-"}</td>
+                      <td class="notes-cell">${escapeHtml(item.notes || "-")}</td>
                       <td>
                         ${
                           item.entryStatus === "duplicate"
@@ -605,12 +610,12 @@ function renderActivityList() {
       const dateRange = activity.toDate ? `${activity.fromDate} to ${activity.toDate}` : activity.fromDate;
 
       return `
-      <div class="activity-item" onclick="window.showActivityDetails(${index})" style="cursor: pointer;">
+      <div class="activity-item" data-index="${index}" style="cursor: pointer;">
         <div class="activity-info">
-          <h3>${activity.type} - ${dateRange}</h3>
-          <p>${timeAgo} • ${activity.summary.totalEntries || 0} entries</p>
+          <h3>${escapeHtml(activity.type)} - ${escapeHtml(dateRange)}</h3>
+          <p>${timeAgo} • ${escapeHtml(activity.summary.totalEntries || 0)} entries</p>
         </div>
-        <span class="activity-badge activity-badge--${activity.type.toLowerCase()}">${activity.type}</span>
+        <span class="activity-badge activity-badge--${escapeHtml(activity.type.toLowerCase())}">${escapeHtml(activity.type)}</span>
       </div>
     `;
     })
@@ -618,6 +623,12 @@ function renderActivityList() {
 
   activityList.innerHTML = html;
 }
+
+// Inline onclick is blocked by the CSP, so activity rows are wired here.
+activityList.addEventListener("click", (event) => {
+  const item = event.target.closest(".activity-item[data-index]");
+  if (item) window.showActivityDetails(Number(item.dataset.index));
+});
 
 // Show activity details (make it globally accessible)
 window.showActivityDetails = function (index) {
@@ -704,8 +715,8 @@ function showToast(title, message, type = "info") {
   toast.innerHTML = `
     <div class="toast-icon">${icon}</div>
     <div class="toast-content">
-      <div class="toast-title">${title}</div>
-      <div class="toast-message">${message}</div>
+      <div class="toast-title">${escapeHtml(title)}</div>
+      <div class="toast-message">${escapeHtml(message)}</div>
     </div>
   `;
 
