@@ -4,6 +4,8 @@ Every route lives in `server.js`. Read before touching a route handler or a `fet
 
 All responses are JSON. Every handler catches and answers `500` with `{ "error": "<message>" }`; validation failures answer `400` with the same shape.
 
+In production every route except `/healthz` sits behind the Cloudflare Access gate (403 without a valid token for an allowlisted email; see [deployment.md](deployment.md)). Any non-GET request from another origin (`Sec-Fetch-Site` other than `same-origin`, or a foreign `Origin`) is a `403`. API responses are `Cache-Control: no-store`.
+
 ## Live routes
 
 | Method | Path | Purpose |
@@ -13,6 +15,7 @@ All responses are JSON. Every handler catches and answers `500` with `{ "error":
 | GET | `/api/users/:account` | All users in one account; `:account` is `agency` or `contractor` |
 | POST | `/api/preview` | Dry run with duplicate detection; writes nothing |
 | POST | `/api/sync` | Executes the sync; writes to the contractor account |
+| GET | `/healthz` | `ok`, answered before the Access gate; for the Docker healthcheck |
 | GET | anything else | `public/index.html`, for client-side routing |
 
 ## GET /api/status
@@ -54,7 +57,7 @@ Answers `400` when neither `EMPLOYEE_1_NAME` nor `EMPLOYEE_2_NAME` is set. `foun
 }
 ```
 
-`:account` is compared against the literal `"agency"`; anything else selects the contractor account, including a typo.
+`:account` must be `agency` or `contractor`; anything else is a `400`.
 
 ## POST /api/preview
 
@@ -64,7 +67,7 @@ Request:
 { "fromDate": "2026-09-01", "toDate": "2026-09-15", "userIds": [1234567] }
 ```
 
-`fromDate` and `toDate` are required `YYYY-MM-DD` strings; omitting either is a `400`. `userIds` is optional and holds **agency** user ids—when absent or empty, the handler falls back to matching `config.targetUsers` by name. No agency user matched is a `400`.
+`fromDate` and `toDate` are required, must be real `YYYY-MM-DD` days, and `fromDate` must not be after `toDate`; otherwise `400`. `userIds` is optional and holds **agency** user ids as integers. Only agency users matching `config.targetUsers` by name are ever synced: `userIds` narrows that set and cannot widen it. No user left is a `400`. `/api/sync` validates the same way, and answers `409` while another sync is running.
 
 Response:
 

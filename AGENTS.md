@@ -18,6 +18,8 @@ When a change makes anything in this file inaccurate—a command, a path, a conv
 | Build preview-report CSS | `npm run build:css` |
 | Watch preview-report CSS | `npm run watch:css` |
 | Build dashboard CSS | `sass assets/styles/dashboard.scss public/css/dashboard.css` |
+| Deploy to production (approval required) | `./utils/deploy/prod.sh` (`--dry-run` first) |
+| Production status, logs, gate check | `./utils/deploy/deploy-utils.sh status`, `logs`, `gate-check` |
 
 Server listens on **8118**, hardcoded in `server.js`. No lint, formatter, typecheck, or unit-test command exists in this repo; do not invent one unless asked.
 
@@ -44,6 +46,8 @@ Not required, and not to be attempted: there is no unit, integration, or e2e sui
 - **Never read `.env` or `.vscode/sftp.json` into a commit, a log line, a console dump, or a chat response.** Names of variables are fine; values are not.
 - **Never commit anything matching `.gitignore`.** Note that `**/_*` silently ignores every path starting with an underscore, including `_PLANS/` and `_archive/`.
 - **Deploying to the NAS requires explicit human approval**, every time.
+- **Never publish port 8118 except through the tunnel**, and never set `REQUIRE_ACCESS_HEADER=0` in production. Both remove the Google sign-in gate from a tool that writes to Harvest.
+- **DNS, tunnel, and Access-policy changes need User's written permission** for each change.
 - **Adding a dependency requires approval.** There are five, deliberately.
 - Do not introduce a bundler, a framework, or TypeScript. See [docs/decisions.md](docs/decisions.md).
 
@@ -66,6 +70,8 @@ Sync call chain, `POST /api/sync` in `server.js`:
 5. Response is `{ summary, lineItems }`; `displayResults` renders it.
 
 `POST /api/preview` follows the same chain through step 3 and the duplicate check, then returns. It creates nothing.
+
+In production the app runs in Docker on the NAS behind a Cloudflare Tunnel and Cloudflare Access (Google sign-in). The first middlewares in `server.js` add security headers, verify the Access JWT via `lib/access.js` plus the `ALLOWED_EMAILS` list, and refuse cross-origin writes. See [docs/deployment.md](docs/deployment.md).
 
 Dependency direction is one-way: the browser talks to the HTTP API, and nothing else. There is no server-side persistence—no database, no session, no file store. All client state lives in browser `localStorage` under `harvestSyncActivity` and `harvestSyncSettings`.
 
@@ -100,6 +106,9 @@ Deeper: [docs/architecture.md](docs/architecture.md).
 - **No npm script builds the dashboard stylesheet.** `assets/styles/dashboard.scss` compiles to `public/css/dashboard.css` by hand; see [Commands](#commands).
 - **`npm start` shells out to `open <url>`** unless `NODE_ENV=production`. Start the server any other way when scripting, or it spawns a browser tab every run.
 - **Express 5 rejects `app.get("*")`.** The SPA catch-all is a plain `app.use` middleware that filters on `req.path.startsWith("/api/")`. Keep it a middleware.
+- **The server refuses to boot without the Harvest tokens, account IDs, and `EMPLOYEE_1_NAME`**, and with `REQUIRE_ACCESS_HEADER=1` it also needs `ACCESS_AUD` and `ALLOWED_EMAILS`.
+- **`/api/preview` and `/api/sync` only ever touch the configured employees.** `userIds` from the browser narrows that set; it cannot add anyone. Concurrent syncs get a `409`.
+- **The CSP is `script-src 'self'`.** Inline scripts and inline `on*=` handlers do not run; wire events in `dashboard.js`. Escape any Harvest-sourced string with `escapeHtml` before it goes into an `innerHTML` template.
 - **Port 8118 has no env override.** If the port is busy, the process holding it is this app. Kill it and restart on 8118; never fall back to another port.
 - **The preview CLI drops `sync-preview-<ISO>.html` in the repo root.** Gitignored, but clean it up.
 - **Zero-hour entries are filtered out** before sync and preview, which is how running timers are excluded. Negative entries are kept: Harvest writes them when a forgotten timer is corrected, and dropping them overstates the contractor invoice. Keep the filter at `entry.hours !== 0`, never `> 0`.
@@ -120,7 +129,8 @@ No secret values belong in this file, in `docs/`, or in any commit. `.env.exampl
 | `AGENCY_BRAND_COLOR`, `CONTRACTOR_BRAND_COLOR` | `.env` | Hex; `server.js` supplies defaults |
 | `EMPLOYEE_1_NAME`, `EMPLOYEE_2_NAME` | `.env` | Must match the Harvest display name exactly, in both accounts |
 | `TIMER_USER` | `.env` | Read only by the disabled timer code |
-| SFTP host, port, user, remote path | `.vscode/sftp.json` (gitignored) | Key-based auth through the SSH agent; no password is stored |
+| `REQUIRE_ACCESS_HEADER`, `ACCESS_AUD`, `ALLOWED_EMAILS` | Written to the NAS `.env` by `utils/deploy/prod.sh` | Leave `REQUIRE_ACCESS_HEADER=0` (or unset) locally |
+| Cloudflare admin token | 1Password, Feral Admin (`jjnr7y3j4qzxx4du6j2lk4xyqq`) | Only for `provision-access.sh` |
 
 To obtain a Harvest token: profile menu → Developers → Create New Personal Access Token. The token and the account ID are shown together, once.
 
@@ -138,7 +148,8 @@ To obtain a Harvest token: profile menu → Developers → Create New Personal A
 
 - [docs/architecture.md](docs/architecture.md)—entry points, duplicated helpers, data flow, frontend structure. Read before any cross-cutting change.
 - [docs/api.md](docs/api.md)—every live and disabled endpoint with request and response shapes. Read before touching a route or a `fetch` call.
-- [docs/deployment.md](docs/deployment.md)—NAS release process, PM2, rollback. Read before any deploy conversation.
+- [docs/deployment.md](docs/deployment.md)—NAS Docker release, Cloudflare Tunnel and Access, rollback. Read before any deploy conversation.
+- [docs/STATUS.md](docs/STATUS.md)—what is live and what is open.
 - [docs/decisions.md](docs/decisions.md)—why no database, no framework, no TypeScript, and why duplicate detection compares fields. Read before "improving" any of those.
 - [docs/debugging.md](docs/debugging.md)—log locations, known failure modes, health checks. Read when something is broken.
 - [docs/RATE_LIMIT_FIX_DOCUMENTATION.md](docs/RATE_LIMIT_FIX_DOCUMENTATION.md)—the 429 root cause and the assignment-cache fix, in full.

@@ -6,7 +6,7 @@ Why the code is shaped the way it is. Read before "fixing" anything listed here.
 
 **Chosen:** browser `localStorage` for activity history and display preferences.
 
-One person uses this tool, on one machine, and the only state worth keeping is a list of past runs and two display toggles. Harvest itself is the system of record for everything that matters. A database would add a service to install, back up, and deploy on a NAS, in exchange for nothing.
+Two people use this tool, each in their own browser, and the only state worth keeping is a list of past runs and two display toggles. Harvest itself is the system of record for everything that matters. A database would add a service to install, back up, and deploy on a NAS, in exchange for nothing.
 
 **Consequence:** history does not follow the user to another browser, and the server cannot report on past syncs. Accepted.
 
@@ -57,3 +57,11 @@ Project names differ between the two accounts more often than codes do, because 
 The timer never reliably reflected state across two accounts—starting a timer in one account did nothing in the other, and the UI implied otherwise. Rather than ship something misleading, the nav link and the server routes were commented out and the client code left in place, so the work is recoverable.
 
 **Consequence:** dead code in three files. Re-enabling means uncommenting all three and solving the cross-account problem first.
+
+## Cloudflare Access in front, not in-app OAuth
+
+**Chosen (2026-11-19):** Docker on the NAS behind the Cloudflare Tunnel, with Cloudflare Access doing Google sign-in, and the container verifying the Access JWT plus its own email allowlist.
+
+It is the same setup as `money.ezzat.com`, needs no new dependency or session code, and keeps the origin unreachable except through the tunnel. The container's own check means a tunnel or policy mistake fails closed. DreamHost was considered and dropped: shared hosting cannot keep a Node process running.
+
+**Consequence:** no stage environment, by User's choice. Adding a person means editing two lists (see [deployment.md](deployment.md)). Activity history stays in each browser's `localStorage`, accepted because only two people on their own devices sign in.
