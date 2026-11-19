@@ -1,0 +1,15 @@
+services:
+  harvest-sync:
+    image: harvest-sync:latest
+    container_name: harvest-sync
+    restart: unless-stopped
+    env_file: .env
+    # Loopback only: cloudflared runs on the NAS host, and the LAN must not reach
+    # the origin directly. The Access token check closes what loopback does not.
+    ports:
+      - "127.0.0.1:8118:8118"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true

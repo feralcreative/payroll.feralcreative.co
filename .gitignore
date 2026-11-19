@@ -17,6 +17,3 @@ deploy-to-nas.sh
 ecosystem.config.js
 /DEPLOYMENT.md
 QUICK-START-NAS.md
-Dockerfile
-docker-compose.yml
-.dockerignore
