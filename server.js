@@ -332,10 +332,11 @@ async function createTimeEntry(account, timeEntry, userId, projectId, taskId) {
 // YYYY-MM-DD days in order; userIds, when given, must be agency user IDs.
 function parseSyncRequest(body) {
   const { fromDate, toDate, userIds } = body || {};
-  const isDay = (s) =>
-    typeof s === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(s) &&
-    new Date(`${s}T00:00:00Z`).toISOString().startsWith(s);
+  const isDay = (s) => {
+    if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+    const d = new Date(`${s}T00:00:00Z`);
+    return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(s);
+  };
   if (!isDay(fromDate) || !isDay(toDate)) return { error: "fromDate and toDate must be YYYY-MM-DD dates" };
   if (fromDate > toDate) return { error: "fromDate must not be after toDate" };
   if (userIds !== undefined && !(Array.isArray(userIds) && userIds.every(Number.isInteger))) {
