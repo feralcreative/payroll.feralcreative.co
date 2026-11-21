@@ -1,4 +1,4 @@
-// Harvest Sync Dashboard JavaScript
+// Payroll dashboard JavaScript
 
 // State
 let activityHistory = [];
@@ -501,7 +501,7 @@ function displayResults(data, type) {
                         ${escapeHtml(item.project)}
                         ${
                           item.projectCode
-                            ? `<br><small style="color: var(--harvest-gray-600);">Code: ${escapeHtml(item.projectCode)}</small>`
+                            ? `<br><small style="color: var(--muted);">Code: ${escapeHtml(item.projectCode)}</small>`
                             : ""
                         }
                         ${
@@ -533,7 +533,7 @@ function displayResults(data, type) {
                     .join("")
                 : `
                 <tr>
-                  <td colspan="7" style="text-align: center; padding: 2rem; color: var(--harvest-gray-600);">
+                  <td colspan="7" style="text-align: center; padding: 2rem; color: var(--muted);">
                     No time entries found for the selected period
                   </td>
                 </tr>
@@ -734,20 +734,20 @@ function showToast(title, message, type = "info") {
 function getToastIcon(type) {
   const icons = {
     success: `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#28A745" stroke-width="2">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"></circle>
         <polyline points="16 8 10 14 8 12"></polyline>
       </svg>
     `,
     error: `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DC3545" stroke-width="2">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="15" y1="9" x2="9" y2="15"></line>
         <line x1="9" y1="9" x2="15" y2="15"></line>
       </svg>
     `,
     info: `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#007BFF" stroke-width="2">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="16" x2="12" y2="12"></line>
         <line x1="12" y1="8" x2="12.01" y2="8"></line>

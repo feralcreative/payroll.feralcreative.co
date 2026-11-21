@@ -17,3 +17,6 @@ deploy-to-nas.sh
 ecosystem.config.js
 /DEPLOYMENT.md
 QUICK-START-NAS.md
+
+# The vendored Feral brand partials start with an underscore
+!brand/scss/_*.scss

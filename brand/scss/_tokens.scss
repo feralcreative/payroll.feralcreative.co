@@ -1,0 +1,319 @@
+// =============================================================
+// Design tokens — Feral Creative
+// Values mirror the live Elementor production site exactly
+// (computed from the live DOM: base font-size 16px).
+// All other partials `@use 'tokens' as t;` to reach these.
+// =============================================================
+
+@use "sass:math";
+
+// --- Brand palette (Elementor global colors) -------------------------------
+$color-primary: #880088; // header / accents
+$color-secondary: #660066; // alt surfaces
+$color-page: #550055; // body background
+$color-accent: #ff00ff; // link / icon hover
+$color-accent-2: #f2295b;
+$color-accent-3: #aa00aa;
+$color-accent-4: #cc00cc;
+$color-text: #dccedc; // all text: Feral-tinted near-white, ~14:1 on the void
+$color-black: #000000;
+$color-white: #ffffff;
+
+// Alpha whites used across the production UI
+$white-c4: rgba($color-text, 0.77); // production #FFFFFFC4, now text-tinted — nav links, muted text
+$white-cc: rgba($color-text, 0.8); // production #FFFFFFCC, now text-tinted — h1
+$white-a3: rgba($color-text, 0.64); // production #FFFFFFA3, now text-tinted — eyebrow / h6
+
+// --- Typography (Lato; px == computed production values) -------------------
+$font-primary:
+  "Lato",
+  -apple-system,
+  BlinkMacSystemFont,
+  "Segoe UI",
+  sans-serif;
+$font-mono: // figures: amounts, hours, and dates
+  "IBM Plex Mono",
+  ui-monospace,
+  "SF Mono",
+  Menlo,
+  monospace;
+
+$weight-light: 300; // headings, about lines, service items
+$weight-regular: 400; // body, copyright
+$weight-medium: 500; // dock links, submit button
+$weight-bold: 700;
+
+// Computed sizes from production
+$fs-about: 1.7rem; // 27.2px / 300 — about statements
+$fs-about-mobile: 1.275rem; // 20.4px — three-quarters size on phones
+$fs-service: 1.75rem; // 28px / 300 — service list items
+// Card-internal type and icon scale in container units (`cqw` = 1% of the
+// card's own width) so a square card keeps its proportions at every
+// breakpoint instead of overflowing once the icon is large.
+$fs-service-card: 13cqw; // ≈27px on a 210px desktop card
+$fs-clients-sub: 1rem; // 16px / 300 — "( A few of them… )"
+$fs-copyright: 0.9rem; // 14.4px — copyright
+$fs-button: 1rem; // 16px — submit button
+
+$lh-about: 1.4; // 32.64/27.2
+$lh-service: 1.5; // 42/28
+$lh-service-card: 1.12; // tight: the longest labels run to three lines
+$lh-base: 1.6;
+
+// --- Layout ----------------------------------------------------------------
+$container-desktop: 1140px;
+$container-tablet: 1024px;
+$container-mobile: 767px;
+$container-pad: 1.5rem;
+
+$hero-logo-size: 350px; // Elementor icon font-size / svg height
+$hero-lockup-width: 520px; // intrinsic width of feral-lockup-white.svg
+$hero-lockup-ratio: math.div(829, 969.58439); // width / height of its viewBox
+$hero-lockup-max-vw: 50vmin; // never wider than this
+$hero-lockup-max-vh: 50vmin; // never taller than this
+$hero-lockup-max-mobile: 70vmin; // both caps on phones, where the lockup reads small
+$hero-lockup-color: #a300a3; // Feral; the breathe shifts it between the two shades below
+$hero-lockup-color-low: #660066; // the deep end of the breathe
+$hero-lockup-color-high: #f060f0; // the bright end, close to neon
+// Every so often the lockup settles on one Feral tone for a few seconds, then
+// drifts back to the breathe. One wander cycle visits each of these once.
+$hero-wander-classic: #880088; // Feral itself
+$hero-wander-vivid: #cc00cc;
+$hero-wander-neon: #ff00ff;
+$hero-wander-duration: 150s; // the whole cycle; each hold is ~10% of it
+$hero-wander-offset: 5s; // start this far in, partway up from the deep end, so the load is not the darkest moment
+// The black lockup's Feral glow — two soft, low-alpha blooms, no hard halo.
+$hero-glow-near-color: rgba($color-accent, 0.22);
+$hero-glow-far-color: rgba($color-primary, 0.35);
+$hero-glow-near: 24px;
+$hero-glow-far: 90px;
+// The lockup's slow mood: its brightness breathes on one cycle while the glow
+// swells, dims, and shifts between Feral shades on another, longer one. The
+// two never line up, so the combination keeps evolving.
+$hero-breathe-dim: 0.7; // brightness at the low end
+$hero-breathe-bright: 1.6; // brightness at the high end
+$hero-breathe-duration: 26s; // one leg, then it eases back
+$hero-breathe-offset: 8s; // start this far into the first leg, above the dim end
+$hero-glow-drift-duration: 41s; // one leg, then it eases back
+$hero-glow-near-peak: 34px;
+$hero-glow-far-peak: 130px;
+$hero-glow-near-color-peak: rgba($color-accent, 0.32);
+$hero-glow-far-color-peak: rgba($color-accent, 0.2); // drifts from Feral toward neon
+$hero-glow-far-color-low: rgba($color-secondary, 0.3);
+$sticky-logo-offset: 50px; // hero logo sticky offset
+$widget-rhythm: 25px; // Elementor global widget spacing
+
+// --- Breakpoints (Elementor defaults) --------------------------------------
+$bp-mobile: 767px; // ≤767  → mobile
+$bp-tablet: 1024px; // ≤1024 → tablet
+$bp-desktop: 1025px; // ≥1025 → desktop
+
+// --- Motion ----------------------------------------------------------------
+$transition: 0.3s ease; // Elementor default hover transition
+$sticky-transition: 1s; // sticky-logo shrink/fade duration
+
+// Hero lockup "recede" end-state — the values js/main.js scrubs toward as
+// the first viewport of scroll passes. Kept here so the resting look is
+// tuned in one place, even though GSAP applies them.
+$hero-recede-scale: 0.9;
+$hero-recede-opacity: 0.18;
+$hero-recede-blur: 1px;
+
+// Section reveal
+$reveal-duration: 0.7s;
+$reveal-shift: 28px;
+
+// Services hover interaction
+$service-dim-opacity: 0.6; // siblings, while one card is hovered
+// Opening and closing a card: a long ease-out that starts quick and glides
+// in, so it feels smooth without feeling slow.
+$service-open: 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+$service-icon-color: $color-accent; // the neon, on every card
+$service-icon-draw-duration: 0.9s; // one icon drawing in, all its strokes
+$service-icon-draw-stagger: 0.12s; // between cards
+$service-icon-size: 28cqw; // ≈59px on a 210px desktop card; the glyphs are full-bleed
+// The glyph gives up room to the detail list while the card is open, so the
+// card grows less far past its cell and covers less of its neighbour.
+$service-icon-size-open: 20cqw;
+
+// Caps the grid, and with it every card (their contents are sized in cqw).
+$services-grid-max: 960px; // room for the wider gaps without shrinking the cards
+// Mobile: four rows of two sized from the viewport, so the grid fits one
+// screen above the dock instead of stacking eight squares.
+$services-mobile-chrome: 9rem; // dock + breathing room, subtracted from 100svh
+$service-row-gap-mobile: 0.75rem;
+$service-row-mobile: calc((100svh - #{$services-mobile-chrome} - 3 * #{$service-row-gap-mobile}) / 4);
+
+// Background — a dark base, slow Feral glows, and the sequin wall over them.
+// Meant to be barely there.
+$color-void: #0b000d;
+$bg-glow-size: 95vmax;
+$bg-glow-a: rgba($color-primary, 0.18);
+$bg-glow-b: rgba($color-secondary, 0.24);
+$bg-glow-c: rgba($color-accent, 0.04);
+$bg-drift-duration: 80s; // one leg of a glow's drift; it then drifts back
+// Sequin wall — a grid of square sequins, each pivoting on its vertical
+// axis. A wandering flow field flips them in murmurating waves; one caught
+// at the light angle glints neon for an instant. Drawn by js/main.js on a
+// canvas, so the numbers are unitless.
+$bg-sequin-front: #140014; // the face, a near-black Feral shade
+$bg-sequin-back: #260026; // the reverse, only a shade lighter
+$bg-sequin-glint: $color-accent;
+$bg-sequin-size: 5; // px
+$bg-sequin-gap: 1; // px between sequins
+$bg-sequin-alpha: 0.7; // overall, so the wall stays in the background
+$bg-sequin-glint-alpha: 0.35; // peak of a glint
+$bg-sequin-follow: 2.2; // how fast a sequin turns toward the field; lower lags more
+$bg-sequin-speed: 0.5; // multiplier on the whole flow field
+$bg-sequin-ripple: 5; // width of the waves; larger spreads them wider
+$bg-sequin-softness: 1.8; // width of the flip edge; larger tilts more gradually
+// The pointer brushes the wall: a soft local tilt that grows with pointer
+// speed and fades out. Pointer devices only, and never with reduced motion.
+$bg-sequin-brush-radius: 140; // px, the brush's soft radius
+$bg-sequin-brush-strength: 0.75; // added to the field at full energy
+$bg-sequin-brush-fade: 0.5; // per second; higher settles faster
+$bg-sequin-brush-ease: 1.5; // how quickly the brush trails the pointer
+$bg-sequin-brush-fill: 700; // px of pointer travel to reach full energy
+
+// Service cards — bare labels over the background, no surface of their own.
+$card-pad-block: 0.4rem;
+$card-pad-inline: 0.7rem;
+$card-gap: clamp(1rem, 3vw, 2.5rem); // 40px at desktop, tighter on phones
+// Gap between a card's icon and label. NOT in `cqw`: this is set on .service
+// itself, which is the query container, so container units on it resolve
+// against the viewport rather than the card and blow the square open.
+$card-content-gap: 0.15rem;
+// Space between the icon and the label, as a fraction of the icon size so it
+// tracks the open-state shrink.
+$service-icon-trim: 0.12;
+// Expanded card — on hover the card grows out of its square cell to show what
+// the service includes. The cell itself never moves, so the grid stays put.
+// Floored in px: unchecked, 6cqw falls to 10px on the 170px cards the
+// four-column grid leaves at tablet width.
+$fs-service-bullet: max(0.75rem, 6cqw); // ≈13px on a 210px desktop card
+$lh-service-bullet: 1.3;
+$card-detail-color: rgba($color-text, 0.82);
+$card-detail-gap: 0.35rem; // between the bullet lines
+$card-detail-rule: rgba($color-white, 0.18); // hairline above the list
+$card-detail-pad: 1rem; // above and below the hairline, equally
+
+// Client logos — white and held back until hovered.
+$client-logo-opacity: 0.7;
+// Four rows of logo cells that scroll sideways as a marquee (static and
+// wrapped under reduced motion or without JS). Logo caps are the old grid's
+// 160×70 / 100×50, scaled up 25%.
+// The side padding is the horizontal gap between logos (twice it, cell to
+// cell); padding rather than flex gap keeps the marquee loop seamless.
+$client-cell-width: 18rem; // 288px — a 200px logo plus its padding
+$client-cell-height: 10rem;
+$client-cell-pad: 1.25rem 2.75rem;
+$client-logo-max-width: 200px;
+$client-logo-max-height: 88px;
+$client-cell-width-mobile: 11.5rem; // 184px — a 125px logo plus its padding
+$client-cell-height-mobile: 5.5rem; // five rows have to fit an iPhone SE
+$client-cell-pad-mobile: 0.5rem 1.75rem;
+$client-logo-max-width-mobile: 125px;
+$client-logo-max-height-mobile: 62px;
+// Per-logo optical size, keyed by the file's name in img/clients/. A visual
+// scale only: the cell keeps its size, so the marquee spacing is unchanged.
+$client-logo-scales: (
+  'robert-half': 1.3,
+  'gap': 1.6,
+);
+// Marquee: every row moves at the same speed whatever its length; alternate
+// rows run the other way. The edge fade softens logos entering and leaving.
+$clients-marquee-speed: 28; // px per second
+// How many rows js/main.js deals the logos into. index.html carries four as
+// the no-JS fallback.
+$clients-rows: 4;
+$clients-rows-mobile: 5;
+$clients-row-gap-mobile: 0.625rem; // between the five rows on phones
+$clients-marquee-fade: 8%;
+$clients-sub-gap-mobile: 1.5rem;
+
+// Dock — the floating bottom nav.
+$dock-offset: 1rem; // above the bottom edge (plus the safe-area inset)
+$dock-bg: rgba($color-void, 0.55);
+$dock-border: rgba($color-white, 0.08);
+$dock-blur: 12px;
+$dock-pad: 0.3rem;
+$dock-gap: 0.125rem;
+$dock-link-pad: 0.6rem 1rem;
+$dock-link-pad-mobile: 0.5rem 0.4rem; // trimmed so the larger links still fit 375px
+$fs-dock: 0.875rem; // 14px
+$fs-dock-mobile: 0.975rem; // 15.6px — five links on a 375px screen
+$dock-underline-width: 1.25em;
+$dock-underline-inset: 0.3rem;
+$dock-clearance: 4.5rem; // what content at the very bottom must leave free
+
+// Section title — one fixed label, top left, naming the section in view.
+// Each new word is drawn in as a neon outline, then filled.
+$section-title-offset: 1.75rem; // from the top and left edges
+$section-title-offset-mobile: 1rem;
+$fs-section-title: 1.25rem; // 20px
+$fs-section-title-mobile: 1rem;
+$section-title-clearance-mobile: 3rem; // what a tall section keeps free under the label
+$section-title-tracking: 0.2em;
+$section-title-stroke: $color-accent; // the neon outline
+$section-title-draw-duration: 1.4s; // the outline
+$section-title-fill-duration: 0.25s; // then the white fill
+$section-title-fill-overlap: 0.3; // the fill starts this share of the draw before it ends
+
+// Contact form — compact everywhere, tighter still on phones. Inputs stay at
+// 1rem so iOS does not zoom in when one is focused.
+$form-column-gap: 1.5rem;
+$form-column-gap-mobile: 0.75rem; // the paired fields stay side by side on phones
+$form-row-gap: 1.25rem;
+$form-row-gap-mobile: 0.75rem;
+$form-label-gap: 0.4rem;
+$form-label-gap-mobile: 0.3rem;
+$fs-form-label: 0.8125rem; // 13px
+$form-input-pad: 0.6rem 0.8rem;
+$form-input-blur: 4px; // frosts the sequin wall behind each field
+$form-input-pad-mobile: 0.5rem 0.75rem;
+$form-textarea-min: 6rem;
+$form-textarea-min-mobile: 4.5rem;
+$form-button-pad: 0.75rem 2.25rem;
+$form-button-pad-mobile: 0.65rem 1.75rem;
+$contact-social-gap: 2.5rem; // above the social row
+$contact-social-gap-mobile: 1.75rem;
+$contact-social-size: 22px;
+$contact-social-size-mobile: 20px;
+$contact-copyright-gap: 2rem; // below the social row
+$contact-copyright-gap-mobile: 1.25rem;
+
+// Team — two people.
+$team-max: 520px;
+$team-gap: 2rem;
+$team-gap-mobile: 1.5rem;
+$team-top-gap: 3.5rem; // between the About statements and the names
+$team-top-gap-mobile: 2rem;
+$fs-team-name: 1.5rem; // 24px
+$fs-team-name-mobile: 1.3125rem; // 21px on phones
+$fs-team-role: 0.75rem; // 12px
+$team-links-gap: 1rem; // above the icon row
+$team-link-size: 18px;
+$team-link-size-mobile: 14px;
+$team-links-gap-mobile: 0.5rem; // above the icon row, on phones
+$team-link-spacing: 1.25rem; // between the icons
+
+// --- Client portal link ----------------------------------------------------
+$client-login-offset: 1.5rem;
+$client-login-offset-mobile: 1rem;
+$client-login-pad: 0.5rem 0.75rem;
+$client-login-size: 0.875rem;
+$client-login-bg: rgba($color-void, 0.7);
+$client-login-border: rgba($color-text, 0.2);
+
+// --- Calendar page (/calendar) ---------------------------------------------
+$calendar-pad-top: 6rem; // clears the fixed home link
+$calendar-pad-top-mobile: 4.5rem;
+$calendar-pad-bottom: 4rem; // clears the background pause button
+$fs-calendar-title: 2rem;
+$fs-calendar-title-mobile: 1.5rem;
+$calendar-title-gap: 1.5rem; // heading to the scheduler
+$calendar-frame-height: 720px;
+$calendar-frame-min-height: 600px; // Google's own embed default
+$calendar-frame-bg: $color-white; // Google paints the scheduler on white
+$calendar-frame-border: rgba($color-text, 0.2);
+$calendar-fallback-gap: 1rem; // scheduler to the fallback line
