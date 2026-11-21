@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Create, or audit, the Cloudflare Access application for harvest.feralcreative.co.
+# Create, or audit, the Cloudflare Access application for payroll.feralcreative.co.
 #
 #   CLOUDFLARE_API_TOKEN="$(op read 'op://Private/jjnr7y3j4qzxx4du6j2lk4xyqq/credential' \
 #     --account ziadezzat.1password.com)" ./utils/deploy/provision-access.sh [--dry-run]
@@ -15,9 +15,9 @@ set -euo pipefail
 ACCOUNT_ID="30aa05fc7822ef63635046e5c7771a9a"
 GOOGLE_IDP="eb8c3be3-b566-4ba3-9ec9-aebeb6faff50"
 API="https://api.cloudflare.com/client/v4"
-DOMAIN="harvest.feralcreative.co"
+DOMAIN="payroll.feralcreative.co"
 SESSION="24h"
-POLICY="Feral — harvest.feralcreative.co"
+POLICY="Feral — payroll.feralcreative.co"
 EMAILS=(
   "rebecca@feralcreative.co"
   "ziad@feralcreative.co"

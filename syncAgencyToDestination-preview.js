@@ -42,7 +42,7 @@ async function harvestRequest(account, endpoint, method = "GET", body = null) {
       Authorization: `Bearer ${account.token}`,
       "Harvest-Account-Id": account.accountId,
       "Content-Type": "application/json",
-      "User-Agent": "Harvest-Sync-Tool (contact@example.com)",
+      "User-Agent": "Feral-Payroll (contact@example.com)",
     },
   };
 
@@ -129,14 +129,14 @@ function generateHTMLReport(reportData, fromDate, toDate) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Harvest Sync Preview - ${fromDate} to ${toDate}</title>
+    <title>Payroll Sync Preview - ${fromDate} to ${toDate}</title>
     <style>
         ${compiledCSS}
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔍 Harvest Sync Preview</h1>
+        <h1>🔍 Payroll Sync Preview</h1>
         <div class="subtitle">${config.agency.name} → ${config.contractor.name} | ${fromDate} to ${toDate}</div>
         
         <div class="summary">

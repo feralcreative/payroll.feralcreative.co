@@ -1,7 +1,7 @@
 services:
-  harvest-sync:
-    image: harvest-sync:latest
-    container_name: harvest-sync
+  payroll:
+    image: payroll:latest
+    container_name: payroll
     restart: unless-stopped
     env_file: .env
     # Loopback only: cloudflared runs on the NAS host, and the LAN must not reach

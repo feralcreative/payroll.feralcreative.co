@@ -1,4 +1,4 @@
-# Harvest Sync Helper Scripts
+# Payroll Helper Scripts
 
 This directory contains utility scripts for managing your Harvest accounts.
 

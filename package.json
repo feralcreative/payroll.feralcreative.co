@@ -1,7 +1,7 @@
 {
-  "name": "harvest-sync",
+  "name": "payroll",
   "version": "1.0.0",
-  "description": "Sync time entries between two Harvest accounts",
+  "description": "payroll.feralcreative.co: sync time entries between two Harvest accounts",
   "main": "syncAgencyToDestination.js",
   "scripts": {
     "start": "node server.js",

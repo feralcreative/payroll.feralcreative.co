@@ -15,7 +15,7 @@ curl -s http://localhost:8118/api/sync/users
 ## Logs
 
 - **Development:** stdout and stderr from `npm start`, plus the browser console. Every sync logs per-user entry counts and each skipped duplicate.
-- **Production:** `./utils/deploy/deploy-utils.sh logs` (Docker logs of the `harvest-sync` container on the NAS). Requests refused by the Access gate log as `[access] Blocked …`, and each sync logs who started it.
+- **Production:** `./utils/deploy/deploy-utils.sh logs` (Docker logs of the `payroll` container on the NAS). Requests refused by the Access gate log as `[access] Blocked …`, and each sync logs who started it.
 - There is no logging library and no log file in development. `console.log` is the mechanism.
 
 ## Failure modes

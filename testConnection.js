@@ -12,7 +12,7 @@ async function testHarvestConnection(accountName, accountId, token) {
       headers: {
         Authorization: `Bearer ${token}`,
         "Harvest-Account-Id": accountId,
-        "User-Agent": "Harvest-Sync-Tool (contact@example.com)",
+        "User-Agent": "Feral-Payroll (contact@example.com)",
       },
     });
 

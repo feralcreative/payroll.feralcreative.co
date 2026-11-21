@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# harvest.feralcreative.co — post-deploy management.
+# payroll.feralcreative.co — post-deploy management.
 #   ./utils/deploy/deploy-utils.sh logs|status|restart|stop|start|health|gate-check
 set -euo pipefail
 
 NAS="ziad@nas.feralcreative.co"
 SSH=(ssh -p 33725 "$NAS")
-DIR="/volume1/web/harvest.feralcreative.co"
-NAME="harvest-sync"
-URL="https://harvest.feralcreative.co"
+DIR="/volume1/web/payroll.feralcreative.co"
+NAME="payroll"
+URL="https://payroll.feralcreative.co"
 DOCKER="/usr/local/bin/docker"
 COMPOSE="/usr/local/bin/docker-compose"
 

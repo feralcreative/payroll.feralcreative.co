@@ -30,7 +30,7 @@ async function harvestRequest(account, endpoint, method = "GET", body = null) {
       Authorization: `Bearer ${account.token}`,
       "Harvest-Account-Id": account.accountId,
       "Content-Type": "application/json",
-      "User-Agent": "Harvest-Sync-Tool (contact@example.com)",
+      "User-Agent": "Feral-Payroll (contact@example.com)",
     },
   };
 

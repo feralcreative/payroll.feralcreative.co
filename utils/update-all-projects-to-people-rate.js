@@ -24,7 +24,7 @@ async function harvestRequest(account, endpoint, method = "GET", body = null) {
     headers: {
       Authorization: `Bearer ${account.token}`,
       "Harvest-Account-Id": account.accountId,
-      "User-Agent": "Harvest Sync (harvest-sync@example.com)",
+      "User-Agent": "Feral-Payroll (contact@example.com)",
       "Content-Type": "application/json",
     },
   };

@@ -1,8 +1,8 @@
-![Harvest Sync Logo](assets/images/icon-harvest-sync.png)
+![Feral Creative](public/images/favicon-180.png)
 
-# Harvest Sync
+# Payroll
 
-This tool syncs time entries from one [Harvest](https://www.getharvest.com/) account (source agency) to another Harvest account (contractor company) for specified employees. Features a modern web dashboard with billing period selection, duplicate detection, and activity history.
+Feral Creative's payroll tool, served at <https://payroll.feralcreative.co> and formerly called Harvest Sync. It syncs time entries from one [Harvest](https://www.getharvest.com/) account (source agency) to another Harvest account (contractor company) for specified employees. Features a modern web dashboard with billing period selection, duplicate detection, and activity history.
 
 >**Disclaimer:** This application is an independent, unofficial project and is not affiliated with, endorsed, or sponsored by Harvest. Harvest is a registered trademark of its respective owner.
 
@@ -48,7 +48,7 @@ When contractors work for an agency but need to track their time in both the age
    - Click on your profile picture in the top right corner
    - Select "Developers" from the dropdown menu
    - Click "Create New Personal Access Token"
-   - Give it a name (e.g., "Harvest Sync Tool")
+   - Give it a name (e.g., "Payroll")
    - Copy both the **Token** and the **Account ID** that are displayed together on this page
    - **Important:** Both values are shown on the same page when you create the token
 
@@ -66,7 +66,7 @@ When contractors work for an agency but need to track their time in both the age
 
 ### Web Dashboard (Recommended)
 
-The easiest way to use Harvest Sync is through the web dashboard:
+The easiest way to use Payroll is through the web dashboard:
 
 ```bash
 npm start
@@ -90,10 +90,6 @@ This will:
 - **Activity History**: Clickable history items to review past operations
 - **Settings Page**: Configure API credentials, target users, and display preferences
 - **Results Display**: See detailed summaries with Created vs Duplicate status
-
-#### Screenshot
-
-![Harvest Sync Dashboard Screenshot](assets/images/harvest-sync-dashboard.png)
 
 ### Command Line Usage
 

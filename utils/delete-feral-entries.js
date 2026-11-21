@@ -41,7 +41,7 @@ async function harvestRequest(path, method = "GET", body = null) {
     headers: {
       "Harvest-Account-ID": FERAL_ACCOUNT_ID,
       Authorization: `Bearer ${FERAL_ACCESS_TOKEN}`,
-      "User-Agent": "Harvest Sync (harvest-sync@feralcreative.com)",
+      "User-Agent": "Feral-Payroll (contact@example.com)",
       "Content-Type": "application/json",
     },
   };

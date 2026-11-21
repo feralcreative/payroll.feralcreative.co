@@ -173,7 +173,7 @@ Use this checklist to verify the fix has been applied correctly:
 
 ## Related Files
 
-In the original harvest-sync project:
+In the original harvest-sync project (now Payroll):
 - `server.js` - Main server file containing the sync endpoint
 - Lines ~451-465 - Cache variable declarations
 - Lines ~530-545 - Cache check implementation

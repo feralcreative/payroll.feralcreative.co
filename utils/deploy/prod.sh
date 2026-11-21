@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# harvest.feralcreative.co — production deploy to the Synology NAS.
+# payroll.feralcreative.co — production deploy to the Synology NAS.
 #
 #   ./utils/deploy/prod.sh [--dry-run] [--force]
 #
@@ -13,15 +13,20 @@ set -euo pipefail
 NAS_USER="ziad"
 NAS_HOST="nas.feralcreative.co"
 NAS_SSH_PORT="33725"
-NAS_DEPLOY_PATH="/volume1/web/harvest.feralcreative.co"
-CONTAINER_NAME="harvest-sync"
-IMAGE_NAME="harvest-sync:latest"
-PRIMARY_URL="https://harvest.feralcreative.co"
+NAS_DEPLOY_PATH="/volume1/web/payroll.feralcreative.co"
+CONTAINER_NAME="payroll"
+# The pre-rename deployment. It publishes the same port, so it is stopped just
+# before the new container starts, and started again if the new one fails.
+LEGACY_DEPLOY_PATH="/volume1/web/harvest.feralcreative.co"
+IMAGE_NAME="payroll:latest"
+PRIMARY_URL="https://payroll.feralcreative.co"
 DOCKER="/usr/local/bin/docker"
 COMPOSE="/usr/local/bin/docker-compose"
 
 # The Access application's AUD tag (not a secret; provision-access.sh prints it).
-ACCESS_AUD="7489476c3ba83f5b196a524fc47a3994afcb3d265d533ec703a7ee994680476f"
+# Empty until the payroll.feralcreative.co application exists: the AUD tag of the
+# old harvest.feralcreative.co application does not carry over.
+ACCESS_AUD=""
 # Must match the allow policy in provision-access.sh.
 ALLOWED_EMAILS="ziad@feralcreative.co,rebecca@feralcreative.co"
 
@@ -82,7 +87,7 @@ if [[ -n "$DRY_RUN" ]]; then
   echo "  1. docker build --platform linux/amd64 -t ${IMAGE_NAME} ."
   echo "  2. stream the image to ${NAS_HOST}:${NAS_DEPLOY_PATH} and docker load it"
   echo "  3. send docker-compose.yml; write .env (mode 600) with: ${RUNTIME_KEYS[*]} REQUIRE_ACCESS_HEADER ACCESS_AUD ALLOWED_EMAILS"
-  echo "  4. docker-compose down, up -d; check /healthz inside the container"
+  echo "  4. stop the old container in ${LEGACY_DEPLOY_PATH} if it is running; docker-compose down, up -d; check /healthz inside the container (the old one is restarted if this fails)"
   echo "  5. require an unauthenticated ${PRIMARY_URL}/ to 302 to the Access login"
   exit 0
 fi
@@ -109,15 +114,27 @@ info "Writing runtime .env (mode 600)..."
   printf 'REQUIRE_ACCESS_HEADER=1\nACCESS_AUD=%s\nALLOWED_EMAILS=%s\n' "$ACCESS_AUD" "$ALLOWED_EMAILS"
 } | "${SSH[@]}" "umask 077 && cat > ${NAS_DEPLOY_PATH}/.env.tmp && chmod 600 ${NAS_DEPLOY_PATH}/.env.tmp && mv ${NAS_DEPLOY_PATH}/.env.tmp ${NAS_DEPLOY_PATH}/.env"
 
+LEGACY=""
+if "${SSH[@]}" "test -f ${LEGACY_DEPLOY_PATH}/docker-compose.yml && cd ${LEGACY_DEPLOY_PATH} && [ -n \"\$(${COMPOSE} ps -q)\" ]"; then
+  LEGACY=1
+  info "Stopping the old harvest-sync container (same port)..."
+  "${SSH[@]}" "cd ${LEGACY_DEPLOY_PATH} && ${COMPOSE} down"
+fi
+restore_legacy() {
+  [[ -n "$LEGACY" ]] || return 0
+  warn "Starting the old harvest-sync container again..."
+  "${SSH[@]}" "cd ${NAS_DEPLOY_PATH} && ${COMPOSE} down; cd ${LEGACY_DEPLOY_PATH} && ${COMPOSE} up -d" || warn "Could not restart it. Run docker-compose up -d in ${LEGACY_DEPLOY_PATH}."
+}
+
 info "Restarting container..."
-"${SSH[@]}" "cd ${NAS_DEPLOY_PATH} && ${COMPOSE} down && ${COMPOSE} up -d"
+"${SSH[@]}" "cd ${NAS_DEPLOY_PATH} && ${COMPOSE} down && ${COMPOSE} up -d" || { restore_legacy; die "The container did not start."; }
 
 info "Waiting for /healthz inside the container..."
 for i in $(seq 1 15); do
   if "${SSH[@]}" "${DOCKER} exec ${CONTAINER_NAME} curl -fsS http://127.0.0.1:8118/healthz" >/dev/null 2>&1; then
     ok "App is up."; break
   fi
-  [[ $i -eq 15 ]] && { "${SSH[@]}" "${DOCKER} logs --tail 30 ${CONTAINER_NAME}" || true; die "App never answered /healthz."; }
+  [[ $i -eq 15 ]] && { "${SSH[@]}" "${DOCKER} logs --tail 30 ${CONTAINER_NAME}" || true; restore_legacy; die "App never answered /healthz."; }
   sleep 2
 done
 
@@ -128,6 +145,7 @@ case "$RESULT" in
     ok "Unauthenticated request redirects to the Access login." ;;
   200\ *|403\ *)
     "${SSH[@]}" "cd ${NAS_DEPLOY_PATH} && ${COMPOSE} down" || true
+    restore_legacy
     die "HTTP ${RESULT%% *} without signing in: Access is not in front. Container stopped." ;;
   *)
     die "Unexpected response '${RESULT}'. The container is running; check the tunnel and Access, then run deploy-utils.sh gate-check." ;;

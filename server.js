@@ -1,4 +1,4 @@
-// Harvest Sync Web Server
+// Payroll web server
 require("dotenv").config();
 const express = require("express");
 const path = require("path");
@@ -134,7 +134,7 @@ async function harvestRequest(account, endpoint, method = "GET", body = null) {
       Authorization: `Bearer ${account.token}`,
       "Harvest-Account-Id": account.accountId,
       "Content-Type": "application/json",
-      "User-Agent": "Harvest-Sync-Tool (contact@example.com)",
+      "User-Agent": "Feral-Payroll (contact@example.com)",
     },
   };
 
@@ -1132,7 +1132,7 @@ app.use((req, res, next) => {
 // Start server
 app.listen(PORT, async () => {
   const url = `http://localhost:${PORT}`;
-  console.log(`\n🚀 Harvest Sync Dashboard running at ${url}\n`);
+  console.log(`\n🚀 Payroll dashboard running at ${url}\n`);
   console.log(`📊 Dashboard: ${url}`);
   console.log(`🔌 API Status: ${url}/api/status`);
 

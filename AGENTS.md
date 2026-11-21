@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Operating manual for Harvest Sync: a Node/Express tool that copies time entries from one Harvest account (agency, source) into another (contractor, destination). No database, no build step, no test suite.
+Operating manual for Payroll (`payroll.feralcreative.co`, called Harvest Sync until 2026-11-21): a Node/Express tool that copies time entries from one Harvest account (agency, source) into another (contractor, destination). No database, no build step, no test suite.
 
 When a change makes anything in this file inaccurate—a command, a path, a convention, a prohibition—update this file in the same change.
 
@@ -42,9 +42,10 @@ Not required, and not to be attempted: there is no unit, integration, or e2e sui
 - **Never run a real sync to test.** `node syncAgencyToDestination.js`, `npm run sync`, `npm run sync:month`, and `POST /api/sync` all write live time entries into a real Harvest account. This tool has no undo. Use the preview path.
 - **Never run `utils/delete-feral-entries.js`.** It permanently deletes contractor time entries from a hardcoded start date through today.
 - **Never hand-edit generated CSS**: `public/css/dashboard.css`, `assets/styles/preview-report.css`, and either generated `.css.map`. Edit the matching `.scss` in `assets/styles/` and recompile.
+- **Never edit `brand/`.** `brand/scss/_tokens.scss` is a copy of `~/www/feralcreative/feralcreative.co/scss/_tokens.scss` (un-ignored by a `!brand/scss/_*.scss` line in `.gitignore`); the logo and favicons in `public/images/` (`feral-lockup-white.svg`, `feral-favicon.svg`, `favicon-32.png`, and `favicon-180.png`) are copies of its `img/logo/`. A brand change is made in that repo and re-copied here by hand.
 - **Never hand-edit `package-lock.json`.**
 - **Never read `.env` or `.vscode/sftp.json` into a commit, a log line, a console dump, or a chat response.** Names of variables are fine; values are not.
-- **Never commit anything matching `.gitignore`.** Note that `**/_*` silently ignores every path starting with an underscore, including `_PLANS/` and `_archive/`.
+- **Never commit anything matching `.gitignore`.** Note that `**/_*` silently ignores every path starting with an underscore, including `_PLANS/` and `_archive/`. The one exception is `brand/scss/_*.scss`.
 - **Deploying to the NAS requires explicit human approval**, every time.
 - **Never publish port 8118 except through the tunnel**, and never set `REQUIRE_ACCESS_HEADER=0` in production. Both remove the Google sign-in gate from a tool that writes to Harvest.
 - **DNS, tunnel, and Access-policy changes need User's written permission** for each change.
@@ -90,13 +91,15 @@ Deeper: [docs/architecture.md](docs/architecture.md).
 - Routes catch and answer `res.status(500).json({ error: error.message })`.
 - Hours move through the system as decimal floats. Convert to `h:mm` only at render time, via `formatHours` / `formatHoursWithDecimal`.
 - SCSS sources live in `assets/styles/`. Compiled CSS is committed.
+- Colors are Feral Creative's. Both stylesheets `@use "../../brand/scss/tokens"` and derive their local values at the top of the file; the dashboard exposes them as custom properties (`--bg`, `--surface`, `--text`, `--muted`, `--accent`, `--ok`, `--warn`, `--bad`, `--info`). Use those, never a new hex value in a rule. The look is dark only: no sequin wall and no Feral/Tame switch, by User's choice (2026-11-21).
+- The header logo is the lockup painted as a CSS mask in `currentColor` (`.logo`), not an `<img>`.
 - Logging is `console.log` / `console.error` with the operation and its counts. No logger library.
 
 ## Gotchas
 
 - **`syncAgencyToDestination.js` does not run.** Its `config` object defines the key `destination`, but every reference in the file reads `config.contractor`. `main()` throws `TypeError: Cannot read properties of undefined (reading 'accountId')` before any network call. Renaming the key to `contractor` is the fix; nothing else in the file needs it.
 - **Helpers are triplicated.** `harvestRequest`, `getUsers`, `getTimeEntries`, and the config block exist separately in `server.js`, `syncAgencyToDestination.js`, and `syncAgencyToDestination-preview.js`. Changing one changes one.
-- **localStorage keys are camelCase**: `harvestSyncActivity` and `harvestSyncSettings`. Hyphenated names in older notes refer to keys that do not exist.
+- **localStorage keys are camelCase and keep the old name**: `harvestSyncActivity` and `harvestSyncSettings`. Renaming them would drop every browser's activity history. Hyphenated names in older notes refer to keys that do not exist.
 - **The timer feature is disabled in three places**: the nav link is commented out in `public/index.html`, every `/api/timer/*` route is commented out in `server.js`, and the timer functions are still live in `public/js/dashboard.js`. Re-enabling needs all three.
 - **Do not lift the assignment calls out of their cache guards.** `taskAssignmentsCache` and `userAssignmentsCache` in `POST /api/sync` exist because calling `assignTaskToProject` and `assignUserToProject` per entry burned two API calls each and tripped Harvest's 100-requests-per-15-seconds limit. See [docs/RATE_LIMIT_FIX_DOCUMENTATION.md](docs/RATE_LIMIT_FIX_DOCUMENTATION.md).
 - **There is no 429 backoff anywhere.** A large range can still fail partway, leaving a partial sync. Re-running is safe because duplicates are skipped; surface that to the user rather than adding a silent auto-retry.

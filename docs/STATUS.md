@@ -1,6 +1,12 @@
 # Status
 
-Updated: 2026-11-19
+Updated: 2026-11-21
+
+## Rebrand in progress
+
+The tool is now **Payroll**, to be served at <https://payroll.feralcreative.co>. Done on branch `chore/rebrand-payroll` (2026-11-21): Feral Creative colors and logo on the dashboard and the preview report, the name in the UI and docs, and the deploy scripts, container, and NAS path pointed at the new host. The GitHub repo and the local folder are `payroll.feralcreative.co`.
+
+Not done: the new host itself. It needs an Access application, a tunnel rule, a DNS record, and a deploy, in the order given in [deployment.md](deployment.md#moving-from-harvestferalcreativeco). Until then production is the old host below, running the old look, and `prod.sh` on this branch refuses to run because `ACCESS_AUD` is empty.
 
 ## Live
 
@@ -16,3 +22,6 @@ An unauthenticated request redirects to the Access login, and `ziad@feralcreativ
 4. `/volume1/web/harvest.feralcreative.co.2025-11-pm2` on the NAS is the stopped November 2025 copy, holding old Harvest tokens in its `.env`. Delete it when no longer wanted.
 5. A sync longer than Cloudflare's proxy timeout (about 100 seconds) shows a 524 in the browser while the container keeps writing. Re-running is safe because duplicates are skipped, but the UI does not explain it yet.
 6. `syncAgencyToDestination.js` still crashes on start (see AGENTS.md gotchas).
+7. The README has no screenshot: the old one showed the Harvest Sync look and was removed. Take a new one after the new host is live.
+8. `npm install` reports 4 vulnerabilities (1 moderate, 2 high, 1 critical) in the dependency tree. Not looked into yet.
+9. `assets/images/icon-harvest.svg` and `logo-harvest.svg` (Harvest's own marks) and `assets/fonts/monarch.*` are referenced by nothing.
