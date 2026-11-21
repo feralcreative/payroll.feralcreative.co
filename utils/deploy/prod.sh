@@ -26,7 +26,7 @@ COMPOSE="/usr/local/bin/docker-compose"
 # The Access application's AUD tag (not a secret; provision-access.sh prints it).
 # Empty until the payroll.feralcreative.co application exists: the AUD tag of the
 # old harvest.feralcreative.co application does not carry over.
-ACCESS_AUD=""
+ACCESS_AUD="fe8717a33af3207710864e3cbcd3a3aef09655af2b108f2bdee768950aeab200"
 # Must match the allow policy in provision-access.sh.
 ALLOWED_EMAILS="ziad@feralcreative.co,rebecca@feralcreative.co"
 

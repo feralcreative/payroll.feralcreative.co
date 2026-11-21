@@ -6,7 +6,9 @@ Updated: 2026-11-21
 
 The tool is now **Payroll**, to be served at <https://payroll.feralcreative.co>. Done on branch `chore/rebrand-payroll` (2026-11-21): Feral Creative colors and logo on the dashboard and the preview report, the name in the UI and docs, and the deploy scripts, container, and NAS path pointed at the new host. The GitHub repo and the local folder are `payroll.feralcreative.co`. The dashboard also has the Feral/Tame switch: a light look, chosen in the header and remembered per browser.
 
-Not done: the new host itself. It needs an Access application, a tunnel rule, a DNS record, and a deploy, in the order given in [deployment.md](deployment.md#moving-from-harvestferalcreativeco). Until then production is the old host below, running the old look, and `prod.sh` on this branch refuses to run because `ACCESS_AUD` is empty.
+The branch is merged into `main` (not pushed), and the Access application for the new host exists (created 2026-11-21, AUD tag in `prod.sh`).
+
+Not done: the tunnel rule, the DNS record, and the deploy, in the order given in [deployment.md](deployment.md#moving-from-harvestferalcreativeco). Until then production is the old host below, running the old look.
 
 ## Live
 

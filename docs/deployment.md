@@ -47,7 +47,7 @@ Other commands: `logs`, `restart`, `stop`, `start`, `health` (inside the contain
 
 ## Access application
 
-`provision-access.sh` creates it with the Feral Admin token; the `payroll.feralcreative.co` application does not exist yet (2026-11-21). The `harvest.feralcreative.co` application was created the same way on 2026-11-19. Re-running the script audits the existing application (type, session, IdP, cookie flags, no non-allow policies, exact allow list) and fails on any drift:
+`provision-access.sh` created the `payroll.feralcreative.co` application with the Feral Admin token on 2026-11-21 (id `d8893bf7-914b-4bbb-86ce-07d5644ff9ce`); its AUD tag is `ACCESS_AUD` in `prod.sh`. The `harvest.feralcreative.co` application was created the same way on 2026-11-19. Re-running the script audits the existing application (type, session, IdP, cookie flags, no non-allow policies, exact allow list) and fails on any drift:
 
 ```bash
 cd ~/www/feralcreative/payroll.feralcreative.co
