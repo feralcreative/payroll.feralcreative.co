@@ -4,7 +4,7 @@ Read before any deploy conversation. Deploying requires explicit human approval 
 
 ## Target
 
-The app was renamed from Harvest Sync to Payroll on 2026-11-21, and everything below describes the new host. **Until the cutover in [Moving from harvest.feralcreative.co](#moving-from-harvestferalcreativeco) is done, production is still the old host**: <https://harvest.feralcreative.co>, deploy path `/volume1/web/harvest.feralcreative.co`, container and image `harvest-sync`, deployed from commit `6029a64` or earlier.
+The app was renamed from Harvest Sync to Payroll on 2026-11-21, and everything below describes the new host. The cutover in [Moving from harvest.feralcreative.co](#moving-from-harvestferalcreativeco) ran on 2026-11-21 through step 3; the old host's records, its stopped deploy path `/volume1/web/harvest.feralcreative.co`, and the `harvest-sync` image are still to be removed.
 
 | Fact | Value |
 | --- | --- |
