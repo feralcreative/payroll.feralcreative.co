@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/css/dashboard.css">
+    <script src="/js/theme.js"></script>
 </head>
 <body>
 
@@ -32,6 +33,10 @@
                 <a href="/settings" class="nav-link" data-page="settings" title="Settings">
                     <i class="fas fa-cog"></i>
                 </a>
+                <div class="theme-switch" role="group" aria-label="Page style">
+                    <button type="button" data-theme-choice="feral" aria-pressed="true">Feral</button>
+                    <button type="button" data-theme-choice="tame" aria-pressed="false">Tame</button>
+                </div>
             </nav>
         </div>
     </header>

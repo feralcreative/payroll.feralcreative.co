@@ -19,6 +19,19 @@ $ok: #84e3aa;
 $warn: #ffd27a;
 $bad: #ff9898;
 $info: #9cc2ff;
+// Tame: the plain, light alternative, matching the tools site and the client portal.
+$tame-bg: #f6f6f8;
+$tame-surface: #ffffff;
+$tame-text: #1c1a1f;
+$tame-muted: #5e5966;
+$tame-faint: #77707f;
+$tame-border: #d9d6de;
+$tame-ok: #17703d;
+$tame-warn: #8a5a00;
+$tame-bad: #b3261e;
+$tame-info: #1d4f9c;
+$theme-switch-duration: 900ms;
+$theme-switch-easing: cubic-bezier(0.83, 0, 0.17, 1); // slow to leave, slow to land
 $state-bg: 0.12; // alpha of a state color behind its own text
 $state-border: 0.35;
 $state-row: 0.06; // a whole table row
@@ -31,7 +44,16 @@ $shadow-lg: 0 10px 15px rgba(t.$color-black, 0.4);
 $logo-height: 48px;
 $logo-ratio: math.div(829, 969.58439); // feral-lockup-white.svg viewBox
 
-// Custom properties, read by this file and by dashboard.js
+// A state color's three washes: behind its own text, its border, a whole row.
+@mixin state-washes($name, $color) {
+  --#{$name}-bg: #{rgba($color, $state-bg)};
+  --#{$name}-border: #{rgba($color, $state-border)};
+  --#{$name}-row: #{rgba($color, $state-row)};
+}
+
+// Custom properties, read by this file and by dashboard.js. Every color that
+// changes between Feral and Tame is one; `data-theme='tame'` (public/js/theme.js)
+// swaps them below.
 :root {
   --bg: #{t.$color-void};
   --surface: #{$surface};
@@ -48,11 +70,18 @@ $logo-ratio: math.div(829, 969.58439); // feral-lockup-white.svg viewBox
   --accent-hover: #{t.$color-accent};
   --button: #{t.$color-primary};
   --button-hover: #{t.$color-secondary};
+  --button-text: #{t.$color-text};
+  --backdrop: #{$backdrop};
   --focus-ring: #{$focus-ring};
   --ok: #{$ok};
   --warn: #{$warn};
   --bad: #{$bad};
   --info: #{$info};
+  --ok-hover: #{color.adjust($ok, $lightness: -8%)};
+  @include state-washes(ok, $ok);
+  @include state-washes(warn, $warn);
+  @include state-washes(bad, $bad);
+  @include state-washes(info, $info);
   --font-stack: #{t.$font-primary};
   --border-radius: #{$border-radius};
   --border-radius-sm: #{$border-radius-sm};
@@ -60,6 +89,45 @@ $logo-ratio: math.div(829, 969.58439); // feral-lockup-white.svg viewBox
   --shadow-md: #{$shadow-md};
   --shadow-lg: #{$shadow-lg};
   color-scheme: dark;
+}
+
+:root[data-theme="tame"] {
+  --bg: #{$tame-bg};
+  --surface: #{$tame-surface};
+  --surface-raised: #{$tame-surface};
+  --border: #{$tame-border};
+  --field-border: #{$tame-faint}; // 3:1 or better against a white field
+  --border-strong: #{$tame-faint};
+  --hover: #{rgba(t.$color-primary, 0.05)};
+  --text: #{$tame-text};
+  --text-soft: #{$tame-muted};
+  --muted: #{$tame-muted};
+  --faint: #{$tame-faint};
+  --accent: #{t.$color-primary};
+  --accent-hover: #{t.$color-secondary};
+  --button-text: #{t.$color-white};
+  --backdrop: #{rgba(t.$color-black, 0.3)};
+  --focus-ring: #{rgba(t.$color-primary, 0.2)};
+  --ok: #{$tame-ok};
+  --warn: #{$tame-warn};
+  --bad: #{$tame-bad};
+  --info: #{$tame-info};
+  --ok-hover: #{color.adjust($tame-ok, $lightness: -6%)};
+  @include state-washes(ok, $tame-ok);
+  @include state-washes(warn, $tame-warn);
+  @include state-washes(bad, $tame-bad);
+  @include state-washes(info, $tame-info);
+  --shadow-sm: 0 1px 2px #{rgba(t.$color-black, 0.06)};
+  --shadow-md: 0 4px 6px #{rgba(t.$color-black, 0.08)};
+  --shadow-lg: 0 10px 15px #{rgba(t.$color-black, 0.12)};
+  color-scheme: light;
+}
+
+// The switch crossfades the whole page (public/js/theme.js).
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: $theme-switch-duration;
+  animation-timing-function: $theme-switch-easing;
 }
 
 * {
@@ -133,6 +201,7 @@ body {
 
 .header-nav {
   display: flex;
+  align-items: center;
   gap: 2rem;
 }
 
@@ -152,6 +221,39 @@ body {
 .nav-link.active {
   color: var(--accent-hover);
   border-bottom-color: var(--accent);
+}
+
+// Feral / Tame: the client portal's split pill.
+.theme-switch {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999rem;
+  background: var(--surface);
+
+  button {
+    padding: 0.25rem 0.9rem;
+    border: 0;
+    border-radius: 999rem;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition:
+      background-color 0.2s,
+      color 0.2s;
+
+    &:hover {
+      color: var(--accent-hover);
+    }
+
+    &[aria-pressed="true"],
+    &[aria-pressed="true"]:hover {
+      background: var(--text);
+      color: var(--bg);
+      font-weight: 700;
+    }
+  }
 }
 
 /* Main Content */
@@ -217,7 +319,7 @@ body {
 }
 
 .status-icon--success {
-  background: rgba($ok, $state-bg);
+  background: var(--ok-bg);
   color: var(--ok);
 }
 
@@ -234,7 +336,7 @@ body {
 }
 
 .status-icon--error {
-  background: rgba($bad, $state-bg);
+  background: var(--bad-bg);
   color: var(--bad);
 }
 
@@ -406,7 +508,7 @@ body {
 
 .btn-primary {
   background: var(--button);
-  color: var(--text);
+  color: var(--button-text);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -421,7 +523,7 @@ body {
 }
 
 .btn-success:hover:not(:disabled) {
-  background: #{color.adjust($ok, $lightness: -8%)};
+  background: var(--ok-hover);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
@@ -573,12 +675,12 @@ body {
 }
 
 .activity-badge--success {
-  background: rgba($ok, $state-bg);
+  background: var(--ok-bg);
   color: var(--ok);
 }
 
 .activity-badge--preview {
-  background: rgba($info, $state-bg);
+  background: var(--info-bg);
   color: var(--info);
 }
 
@@ -605,7 +707,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #{$backdrop};
+  background: var(--backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -872,6 +974,8 @@ body {
   .header-nav {
     width: 100%;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
   }
 
   .status-cards {
@@ -987,15 +1091,15 @@ body {
 }
 
 .status-badge.new-project {
-  background: rgba($warn, $state-bg);
+  background: var(--warn-bg);
   color: var(--warn);
-  border: 1px solid rgba($warn, $state-border);
+  border: 1px solid var(--warn-border);
 }
 
 .status-badge.new-task {
-  background: rgba($info, $state-bg);
+  background: var(--info-bg);
   color: var(--info);
-  border: 1px solid rgba($info, $state-border);
+  border: 1px solid var(--info-border);
 }
 
 .status-badge.exists {
@@ -1005,21 +1109,21 @@ body {
 }
 
 .status-badge.duplicate {
-  background: rgba($bad, $state-bg);
+  background: var(--bad-bg);
   color: var(--bad);
-  border: 1px solid rgba($bad, $state-border);
+  border: 1px solid var(--bad-border);
 }
 
 .status-badge.created {
-  background: rgba($ok, $state-bg);
+  background: var(--ok-bg);
   color: var(--ok);
-  border: 1px solid rgba($ok, $state-border);
+  border: 1px solid var(--ok-border);
 }
 
 .status-badge.pending {
-  background: rgba($info, $state-bg);
+  background: var(--info-bg);
   color: var(--info);
-  border: 1px solid rgba($info, $state-border);
+  border: 1px solid var(--info-border);
 }
 
 .status-legend {
@@ -1043,11 +1147,11 @@ body {
 
 /* Row highlighting based on entry status */
 .line-item-row.duplicate {
-  background: rgba($bad, $state-row);
+  background: var(--bad-row);
 }
 
 .line-item-row.created {
-  background: rgba($ok, $state-row);
+  background: var(--ok-row);
 }
 
 /* Responsive table */
@@ -1151,12 +1255,12 @@ body {
 }
 
 .timer-status.running {
-  background: rgba($ok, $state-bg);
+  background: var(--ok-bg);
   color: var(--ok);
 }
 
 .timer-status.paused {
-  background: rgba($warn, $state-bg);
+  background: var(--warn-bg);
   color: var(--warn);
 }
 
@@ -1310,8 +1414,8 @@ body {
   }
 
   &.today-entry--running {
-    background: rgba($ok, $state-bg);
-    border-color: rgba($ok, $state-border);
+    background: var(--ok-bg);
+    border-color: var(--ok-border);
 
     .today-entry-hours {
       color: var(--ok);

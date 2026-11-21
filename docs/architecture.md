@@ -61,6 +61,7 @@ State is browser-local:
 | --- | --- |
 | `harvestSyncActivity` | Array of past preview and sync runs, rendered by `renderActivityList` |
 | `harvestSyncSettings` | `{ timeFormat, dateFormat }` display preferences |
+| `feral:payroll-theme` | `feral` or `tame`, written by `public/js/theme.js` and read in `<head>` before first paint |
 
 Billing period selection is computed client-side in `initializeDates` and `updateDateRange` into a plain `fromDate`/`toDate` pair. "Sync all time" substitutes `2000-01-01` through today. The server knows nothing about billing periods.
 
